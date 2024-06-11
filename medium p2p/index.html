@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peer 2 Peer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="video-container">
+        <div class="remote-video">
+            <video class="r-video" src="test.mp4" id="remoteVideo" autoplay playsinline></video>
+        </div>
+        <div class="local-video">
+            <video class="l-video" id="localVideo" autoplay playsinline></video>
+        </div>
+    </div>
+</body>
+
+</html>
+
+
+<script>
+
+    var localStream;
+    var remoteStream;
+
+    const localVideo = document.getElementById('localVideo');
+    const remoteVideo = document.getElementById('remoteVideo');
+    localVideo.controls = false;
+    remoteVideo.controls = false
+
+
+    const generateLocalStream = async () => {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+        localVideo.srcObject = localStream
+    }
+
+    generateLocalStream();
+
+</script>
