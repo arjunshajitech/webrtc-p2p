@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+
+    <h1 class="text">PEER TO PEER ( SINGLE TAB )</h1>
+    <div class="videos-container">
+        <div class="vid">
+            <video id="localVideo1" autoplay playsinline controls="false"></video>
+            <video id="remoteVideo2" autoplay playsinline controls="false"></video>
+            <button class="btn" id="localStart">START</button>
+            <button class="btn" id="localEnd">END</button>
+        </div>
+
+        <div class="vid">
+            <video id="remoteVideo1" autoplay playsinline controls="false"></video>
+            <video id="localVideo2" autoplay playsinline controls="false"></video>
+            <button class="btn" id="remoteStart">START</button>
+            <button class="btn" id="remoteEnd">EDN</button>
+        </div>
+    </div>
+</body>
+
+<script src="./index.js"></script>
+</html>
