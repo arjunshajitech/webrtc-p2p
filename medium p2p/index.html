@@ -1,43 +1,184 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Peer 2 Peer</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+    <link rel="stylesheet" href="style.css" />
+  </head>
 
-<body>
+  <body>
     <div class="video-container">
-        <div class="remote-video">
-            <video class="r-video" src="test.mp4" id="remoteVideo" autoplay playsinline></video>
-        </div>
-        <div class="local-video">
-            <video class="l-video" id="localVideo" autoplay playsinline></video>
-        </div>
+      <div class="remote-video">
+        <video class="r-video" id="remoteVideo" autoplay playsinline></video>
+      </div>
+      <div class="local-video">
+        <video class="l-video" id="localVideo" autoplay playsinline></video>
+      </div>
+      <div class="button-containers">
+        <button id="start" style="--clr:#39FF14"><span>CONNECT</span><i></i></button>
+        <button id="audio" style="--clr:#FF44CC"><span>AUDIO</span><i></i></button>
+        <button id="camera" style="--clr:#39FF14"><span>VIDEO</span><i></i></button>
+        <button id="end" style="--clr:#8A2BE2"><span>CLOSE</span><i></i>
+      </div>
     </div>
-</body>
-
+  </body>
 </html>
 
-
 <script>
+  var localStream;
+  var peerConnection = null;
+  let camera = "close";
+  var audio = "close";
 
-    var localStream;
-    var remoteStream;
-
-    const localVideo = document.getElementById('localVideo');
-    const remoteVideo = document.getElementById('remoteVideo');
-    localVideo.controls = false;
-    remoteVideo.controls = false
+  const startBtn = document.getElementById("start");
+  const cameraBtn = document.getElementById("camera");
 
 
-    const generateLocalStream = async () => {
-        localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-        localVideo.srcObject = localStream
+  const localVideo = document.getElementById("localVideo");
+  const remoteVideo = document.getElementById("remoteVideo");
+  localVideo.controls = false;
+  remoteVideo.controls = false;
+
+  const bc = new BroadcastChannel("video_channel");
+
+  bc.onmessage = (event) => {
+    if (!localStream) {
+      return;
     }
 
-    generateLocalStream();
+    switch (event.data.type) {
+      case "candidate": {
+        handleCandidate(event.data);
+        break;
+      }
 
+      case "start": {
+        if (peerConnection) {
+          return;
+        }
+        onStart();
+        break;
+      }
+
+      case "offer": {
+        onOffer(event.data);
+        break;
+      }
+
+      case "answer": {
+        onAnswer(event.data);
+        break;
+      }
+
+      case "close" : {
+        onClose();
+        break;
+      }
+
+      case "open" : {
+        onOpen();
+        break;
+      }
+    }
+  };
+
+  const generateLocalStream = async () => {
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: true,
+    });
+    localVideo.srcObject = localStream;
+    bc.postMessage({ type: "start" });
+  };
+
+  startBtn.onclick = () => {
+    generateLocalStream();
+  }
+
+  cameraBtn.onclick = async () => {
+    console.log("camera " + camera);
+    if(camera === "close") {
+      bc.postMessage({type : "close"})
+      localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+      camera = "open"
+    } else {
+      bc.postMessage({type:"open"})
+      camera = "close"
+    }  
+  }
+
+  function createPeerConnection() {
+    peerConnection = new RTCPeerConnection();
+    peerConnection.onicecandidate = (e) => {
+      const message = {
+        type: "candidate",
+        candidate: null,
+      };
+      if (e.candidate) {
+        message.candidate = e.candidate.candidate;
+        message.sdpMid = e.candidate.sdpMid;
+        message.sdpMLineIndex = e.candidate.sdpMLineIndex;
+      }
+      bc.postMessage(message);
+    };
+    peerConnection.ontrack = (e) => (remoteVideo.srcObject = e.streams[0]);
+    localStream
+      .getTracks()
+      .forEach((track) => peerConnection.addTrack(track, localStream));
+  }
+
+  const onStart = async () => {
+    await createPeerConnection();
+
+    const offer = await peerConnection.createOffer();
+    bc.postMessage({ type: "offer", sdp: offer.sdp });
+    await peerConnection.setLocalDescription(offer);
+  };
+
+  const onOffer = async (offer) => {
+    if (peerConnection) {
+      return;
+    }
+    await createPeerConnection();
+    await peerConnection.setRemoteDescription(offer);
+    const answer = await peerConnection.createAnswer();
+    bc.postMessage({ type: "answer", sdp: answer.sdp });
+    await peerConnection.setLocalDescription(answer);
+  };
+
+  const onAnswer = async (answer) => {
+    if (!peerConnection) {
+      return;
+    }
+    await peerConnection.setRemoteDescription(answer);
+  };
+
+  const onClose = async () => {
+    if(peerConnection) {
+      peerConnection.getReceivers().forEach(receiver => {
+            if (receiver.track) {
+                receiver.track.stop();
+            }
+        });
+    }
+  }
+
+  const onOpen = async () => {
+    if(peerConnection) {
+      
+    }
+  }
+
+  const handleCandidate = async (candidate) => {
+    if (!peerConnection) {
+      return;
+    }
+    if (!candidate.candidate) {
+      await peerConnection.addIceCandidate(null);
+    } else {
+      await peerConnection.addIceCandidate(candidate);
+    }
+  };
 </script>
