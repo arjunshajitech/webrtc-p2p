@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peer 2 Peer</title>
+    <link rel="stylesheet" href="./main.css">
+</head>
+
+<body>
+    <div class="video-container">
+        <div class="remote-video">
+            <video id="remote" autoplay></video>
+            <div class="button-container">
+                <button id="start">START</button>
+                <button id="cam">CAMERA OFF</button>
+                <button id="aud">AUDIO OFF</button>
+                <button id="end">END</button>
+            </div>
+        </div>
+        <div class="local-video" id="videoContainer">
+            <video id="local" autoplay></video>
+        </div>
+    </div>
+</body>
+
+</html>
+<script src="/socket.io/socket.io.js"></script>
+<script src="main.js"></script>
